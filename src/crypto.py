@@ -19,9 +19,9 @@ class CryptoEngine:
         )
         return base64.urlsafe_b64encode(kdf.derive(master_password.encode('utf-8')))
     
-    def unlock_value(self, master_password: str, salt: bytes):
+    def unlock_vault(self, master_password: str, salt: bytes):
         """Otwiera sejf i ładuje klucz szyfrujący do RAM'u"""
-        key = self._derive_key(master_password, salt)
+        key = self._generate_key(master_password, salt)
         self.lock = Fernet(key)
         
     def encrypt_data(self, text: str) -> bytes:
