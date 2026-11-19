@@ -172,7 +172,7 @@ class Database:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
-            command = "UPDATE vault SET enxrypted_password=? WHERE id=?"
+            command = "UPDATE vault SET encrypted_password=? WHERE id=?"
             cursor.execute(command,(passw,index))
 
         conn.close()
