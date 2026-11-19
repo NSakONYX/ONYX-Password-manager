@@ -49,6 +49,7 @@ class Database:
         else:
             return None
         
+        
     def get_master_salt(self) -> bytes | None:
         """Metoda zwracajaca salt z tabeli master_secrets. Zwracany typ - bytes"""
         
@@ -68,7 +69,9 @@ class Database:
 
 
     def save_hash_salt(self, master_hash: bytes, salt: bytes):
-        """Metoda przyjmująca wygenerowany master_hash i salt, ktora zapisuje/nadpisuje je w tabeli master_secrets"""
+        """Metoda przyjmująca wygenerowany master_hash i salt, ktora zapisuje je w tabeli master_secrets. !UWAGA - UZYWAC TYLKO PRZY
+            PUSTEJ TABELI master_secrets!
+        """
         
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -79,6 +82,20 @@ class Database:
         
         conn.close()
             
+    
+    def update_hash_salt(self, master_hash: bytes, salt: bytes):
+        """Metoda ktora nadpisuje master_hash i salt w tabeli master_secrets. Do uzycia przy zmianie master_password"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+
+            command = "UPDATE master_secrets SET salt=?, master_hash=? WHERE id=1"
+            values = (salt, master_hash)
+            cursor.execute(command,values)
+        
+        conn.close()
+        
+        
             
     def add_entry(self, service_name: str, login: str, passw: bytes):
         """Metoda dodajaca wpis do vault, przyjmujaca nazwe serwisu (np. netflix), login (np. email) i haslo"""
@@ -91,6 +108,7 @@ class Database:
             cursor.execute(command, values)
             
         conn.close()
+        
         
     def get_all_services(self):
         """Metoda zwracajaca wszystkie zapisane serwisy w tabeli vault, wraz z ich id"""
@@ -106,6 +124,7 @@ class Database:
         
 
         return output
+
 
     def get_entry_by_id(self, index: int):
         """Metoda zwracajaca caly wiersz z vault o danym id"""
@@ -133,3 +152,40 @@ class Database:
             cursor.execute(command,(index,))
 
         conn.close()        
+        
+        
+    def update_service_name(self, index: int, service_name: str):
+        """Metoda nadpisujaca nazwe serwisu w tabeli vault dla wiersza o danym id"""
+
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "UPDATE vault SET service=? WHERE id=?"
+            cursor.execute(command,(service_name,index))
+
+        conn.close() 
+        
+        
+    def update_password(self, index: int, passw: bytes):
+        """Metoda nadpisujaca haslo w tabeli vault dla wiersza o danym id"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "UPDATE vault SET enxrypted_password=? WHERE id=?"
+            cursor.execute(command,(passw,index))
+
+        conn.close()
+    
+    
+    def update_login(self, index: int, new_login: int):
+        """Metoda nadpisujaca login w tabeli vault dla wiersza o danym id"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "UPDATE vault SET login=? WHERE id=?"
+            cursor.execute(command,(new_login,index))
+
+        conn.close()
+        
