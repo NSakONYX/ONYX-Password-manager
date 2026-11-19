@@ -2,6 +2,8 @@ import sqlite3
 
 class Database:
     def __init__(self, db_path: str = 'data/vault.db'):
+        """Inicjalizacja - tworzenie bazy danych vault i tworzenie tabeli"""
+        
         self.db_path = db_path
 
         with sqlite3.connect(self.db_path) as conn:
@@ -11,11 +13,11 @@ class Database:
                 CREATE TABLE IF NOT EXISTS vault (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     service TEXT NOT NULL,
-                    username TEXT NOT NULL, 
+                    login TEXT NOT NULL, 
                     encrypted_password BLOB NOT NULL
                 )
             """
-            cursor.execute(vault_tab) #service np netflix itp, username np login lub email
+            cursor.execute(vault_tab) #service np netflix itp
             
             master_secrets_tab = """
                 CREATE TABLE IF NOT EXISTS master_secrets (
@@ -29,7 +31,10 @@ class Database:
 
         conn.close()
         
-    def get_master_hash(self):
+            
+    def get_master_hash(self) -> bytes | None:
+        """Metoda zwracajaca master_hash z tabeli master_secrets. Zwracany typ - bytes"""
+        
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
@@ -44,7 +49,87 @@ class Database:
         else:
             return None
         
+    def get_master_salt(self) -> bytes | None:
+        """Metoda zwracajaca salt z tabeli master_secrets. Zwracany typ - bytes"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "SELECT salt FROM master_secrets WHERE id=1"
+            cursor.execute(command)
+            output = cursor.fetchone()
+            
+        conn.close()   
+        
+        if output:
+            return output[0]
+        else:
+            return None
 
+
+    def save_hash_salt(self, master_hash: bytes, salt: bytes):
+        """Metoda przyjmująca wygenerowany master_hash i salt, ktora zapisuje/nadpisuje je w tabeli master_secrets"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+
+            command = "INSERT INTO master_secrets (id, salt, master_hash) VALUES (1,?,?)"
+            values = (salt, master_hash)
+            cursor.execute(command,values)
+        
+        conn.close()
+            
+            
+    def add_entry(self, service_name: str, login: str, passw: bytes):
+        """Metoda dodajaca wpis do vault, przyjmujaca nazwe serwisu (np. netflix), login (np. email) i haslo"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "INSERT INTO vault (service, login, encrypted_password) VALUES (?,?,?)"
+            values = (service_name, login, passw)
+            cursor.execute(command, values)
+            
+        conn.close()
+        
+    def get_all_services(self):
+        """Metoda zwracajaca wszystkie zapisane serwisy w tabeli vault, wraz z ich id"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "SELECT id, service FROM vault"
+            cursor.execute(command)
+            output = cursor.fetchall()
+
+        conn.close()
         
 
+        return output
+
+    def get_entry_by_id(self, index: int):
+        """Metoda zwracajaca caly wiersz z vault o danym id"""
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
             
+            command = "SELECT * FROM vault WHERE id=?"
+            cursor.execute(command,(index,))
+            output = cursor.fetchone()
+
+        conn.close()
+        
+
+        return output
+
+        
+    def delete_entry(self, index: int):
+        """Metoda, ktora usunie wiersz o danym id z tabeli vault"""
+
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            command = "DELETE FROM vault WHERE id=?"
+            cursor.execute(command,(index,))
+
+        conn.close()        
