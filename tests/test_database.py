@@ -1,5 +1,7 @@
 import sqlite3
+
 import pytest
+
 from src.database import Database
 
 
@@ -28,7 +30,8 @@ def test_save_hash_salt_blocks_overwrite(db):
 
     with pytest.raises(sqlite3.IntegrityError):
         db.save_hash_salt(b"nowy_hash", b"nowa_sol")
-        
+
+
 def test_update_hash_salt(db):
     db.save_hash_salt(b"stary_hash", b"stara_sol")
     db.update_hash_salt(b"nowy_hash", b"nowa_sol")

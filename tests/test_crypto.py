@@ -1,5 +1,6 @@
 import pytest
 from cryptography.fernet import InvalidToken
+
 from src.crypto import CryptoEngine
 
 
