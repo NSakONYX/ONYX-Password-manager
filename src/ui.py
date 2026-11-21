@@ -1,10 +1,8 @@
 import os
-from getpass import getpass
 import time
 
 
 class TerminalUI:
-
     @staticmethod
     def type_print(text: str, delay: float = 0.002):
         for char in text:
@@ -29,8 +27,7 @@ class TerminalUI:
         subtitle = "     ━━━  K E Y C H A I N  ━━━"
 
         TerminalUI.type_print(f"{PURPLE}{banner}{RESET}")
-        TerminalUI.type_print(f"{DARK_PURPLE}{subtitle}{RESET}\n",0.04)
-
+        TerminalUI.type_print(f"{DARK_PURPLE}{subtitle}{RESET}\n", 0.04)
 
     @staticmethod
     def clear_screen():
@@ -41,4 +38,3 @@ class TerminalUI:
         print("      1. Pokaż zapisane hasła")
         print("      2.     Ustawienia")
         print("      3.       Wyjdź\n\n")
-        
