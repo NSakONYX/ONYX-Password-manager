@@ -1,8 +1,17 @@
+import getpass
 import os
 import time
 
 
 class TerminalUI:
+    PURPLE = "\033[95m"
+    DARK_PURPLE = "\033[35m"
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    YELLOW = "\033[93m"
+    GRAY = "\033[90m"
+    RESET = "\033[0m"
+
     @staticmethod
     def type_print(text: str, delay: float = 0.002):
         for char in text:
@@ -12,10 +21,6 @@ class TerminalUI:
 
     @staticmethod
     def show_banner():
-        PURPLE = "\033[95m"
-        DARK_PURPLE = "\033[35m"
-        RESET = "\033[0m"
-
         banner = r"""
  ██████╗ ███╗   ██╗██╗   ██╗██╗  ██╗
 ██╔═══██╗████╗  ██║╚██╗ ██╔╝╚██╗██╔╝
@@ -26,8 +31,10 @@ class TerminalUI:
 
         subtitle = "     ━━━  K E Y C H A I N  ━━━"
 
-        TerminalUI.type_print(f"{PURPLE}{banner}{RESET}")
-        TerminalUI.type_print(f"{DARK_PURPLE}{subtitle}{RESET}\n", 0.04)
+        TerminalUI.type_print(f"{TerminalUI.PURPLE}{banner}{TerminalUI.RESET}")
+        TerminalUI.type_print(
+            f"{TerminalUI.DARK_PURPLE}{subtitle}{TerminalUI.RESET}\n", 0.04
+        )
 
     @staticmethod
     def clear_screen():
