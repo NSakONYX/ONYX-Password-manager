@@ -67,8 +67,8 @@ class Database:
             return None
 
     def save_hash_salt(self, master_hash: bytes, salt: bytes):
-        """Metoda przyjmująca wygenerowany master_hash i salt, ktora zapisuje je w tabeli master_secrets.
-        !UWAGA - UZYWAC TYLKO PRZY PUSTEJ TABELI master_secrets!
+        """Metoda przyjmująca wygenerowany master_hash i salt, ktora zapisuje je w tabeli master_secrets. !UWAGA - UZYWAC TYLKO PRZY
+        PUSTEJ TABELI master_secrets!
         """
 
         with sqlite3.connect(self.db_path) as conn:
