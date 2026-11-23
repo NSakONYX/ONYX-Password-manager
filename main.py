@@ -1,17 +1,66 @@
 import os
+from getpass import getpass
 
+from src.crypto import CryptoEngine
 from src.database import Database
 from src.ui import TerminalUI
+
+MAX_LOGIN_ATTEMPTS = 3
+
+
+def handle_auth(db: Database, crypto: CryptoEngine) -> bool:
+    """Obsługuje rejestrację (pierwsze uruchomienie) lub logowanie (max 3 próby)."""
+    creds = db.get_master_credentials()
+
+    if creds is None:
+        TerminalUI.show_info("Pierwsze uruchomienie. Ustaw Master Password.")
+
+        while True:
+            passwd = getpass("Nowe Master Password: ")
+            if not passwd:
+                TerminalUI.show_error("Hasło nie może być puste.")
+                continue
+
+            confirm = getpass("Powtórz Master Password: ")
+            if passwd != confirm:
+                TerminalUI.show_error("Hasła się nie zgadzają. Spróbuj ponownie.")
+                continue
+
+            auth_salt, auth_hash, enc_salt = crypto.create_master_credentials(passwd)
+            db.save_master_credentials(auth_salt, auth_hash, enc_salt)
+            crypto.authenticate(passwd, auth_salt, auth_hash, enc_salt)
+
+            TerminalUI.show_info("Skarbiec utworzony i odblokowany.")
+            return True
+
+    auth_salt, auth_hash, enc_salt = creds
+
+    for attempt in range(1, MAX_LOGIN_ATTEMPTS + 1):
+        passwd = getpass("Podaj Master Password: ")
+
+        if crypto.authenticate(passwd, auth_salt, auth_hash, enc_salt):
+            TerminalUI.show_info("Zalogowano pomyślnie.")
+            return True
+
+        remaining = MAX_LOGIN_ATTEMPTS - attempt
+        if remaining > 0:
+            TerminalUI.show_error(f"Błędne hasło. Pozostało prób: {remaining}")
+        else:
+            TerminalUI.show_error("Przekroczono limit prób. Zamykanie aplikacji.")
+
+    return False
 
 
 def main():
     os.makedirs("data", exist_ok=True)
     db = Database("data/vault.db")
+    crypto = CryptoEngine()
 
     TerminalUI.clear_screen()
     TerminalUI.show_banner()
 
-    # TODO: logowanie - master passw
+    if not handle_auth(db, crypto):
+        return
 
     while True:
         TerminalUI.show_main_menu()
@@ -33,6 +82,7 @@ def main():
                 TerminalUI.clear_screen()
 
             case "3":
+                crypto.lock_vault()
                 TerminalUI.show_info("Zamykanie skarbca...")
                 break
 

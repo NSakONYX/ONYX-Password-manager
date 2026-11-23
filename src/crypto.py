@@ -4,45 +4,61 @@ import hmac
 import os
 
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 class CryptoEngine:
-    def __init__(self):
-        self.lock = None
+    ITERATIONS = 600_000
 
-    @staticmethod
-    def generate_salt() -> bytes:
-        """Generuje losową 16-bajtową sól."""
-        return os.urandom(16)
+    def __init__(self) -> None:
+        self.lock: Fernet | None = None
 
-    def _generate_key(self, master_password: str, salt: bytes) -> bytes:
-        """Metoda generująca klucz AES z hasła i 'soli'"""
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=480000,
+    def _derive_key(self, password: str, salt: bytes) -> bytes:
+        """Wyprowadza 32-bajtowy klucz z hasła i soli za pomocą PBKDF2-HMAC-SHA256."""
+        return hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt,
+            self.ITERATIONS,
+            dklen=32,
         )
-        return base64.urlsafe_b64encode(kdf.derive(master_password.encode("utf-8")))
 
-    def create_master_hash(self, master_password: str, salt: bytes) -> bytes:
-        """Tworzy bezpieczny hash z klucza do zapisu w bazie (tabela master_secrets)."""
-        key = self._generate_key(master_password, salt)
-        return hashlib.sha256(key).digest()
+    def create_master_credentials(
+        self, master_password: str
+    ) -> tuple[bytes, bytes, bytes]:
+        """
+        Wywołujesz raz przy rejestracji.
+        Zwraca (auth_salt, auth_hash, enc_salt) do zapisania w SQLite.
+        """
+        auth_salt = os.urandom(16)
+        enc_salt = os.urandom(16)
+        auth_hash = self._derive_key(master_password, auth_salt)
 
-    def verify_master_password(
-        self, master_password: str, salt: bytes, stored_hash: bytes
+        return auth_salt, auth_hash, enc_salt
+
+    def authenticate(
+        self,
+        master_password: str,
+        auth_salt: bytes,
+        stored_auth_hash: bytes,
+        enc_salt: bytes,
     ) -> bool:
-        """Porównuje wpisane hasło z hashem zapisanym w bazie."""
-        candidate_hash = self.create_master_hash(master_password, salt)
-        return hmac.compare_digest(candidate_hash, stored_hash)
+        """
+        Weryfikuje Master Password i odblokowuje sejf (ładuje Fernet do self.lock).
+        Zwraca True jeśli hasło się zgadza, False w przeciwnym razie.
+        """
+        candidate_hash = self._derive_key(master_password, auth_salt)
 
-    def unlock_vault(self, master_password: str, salt: bytes):
-        """Otwiera sejf i ładuje klucz szyfrujący do RAM'u"""
-        key = self._generate_key(master_password, salt)
-        self.lock = Fernet(key)
+        if not hmac.compare_digest(candidate_hash, stored_auth_hash):
+            return False
+
+        raw_enc_key = self._derive_key(master_password, enc_salt)
+        fernet_key = base64.urlsafe_b64encode(raw_enc_key)
+        self.lock = Fernet(fernet_key)
+        return True
+
+    def lock_vault(self) -> None:
+        """Czyści klucz z pamięci RAM."""
+        self.lock = None
 
     def encrypt_data(self, text: str) -> bytes:
         if not self.lock:
@@ -51,7 +67,7 @@ class CryptoEngine:
         return self.lock.encrypt(text.encode("utf-8"))
 
     def decrypt_data(self, encrypted_bytes: bytes) -> str:
-        """Przyjmuje bytes z bazy danych i zwraca gotowe do skopiowania, zapamiętane hasło"""
+        """Przyjmuje bytes z bazy danych i zwraca odszyfrowane hasło."""
         if not self.lock:
             raise ValueError("Brak klucza w pamięci RAM")
 

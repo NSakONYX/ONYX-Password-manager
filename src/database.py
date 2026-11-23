@@ -179,3 +179,18 @@ class Database:
             cursor.execute(command, (new_login, index))
 
         conn.close()
+
+    def check_if_master_hash(self):
+        with sqlite3.connect("data/vault.db") as conn:
+            cursor = conn.cursor()
+
+            command = "SELECT master_hash from master_secrets WHERE id=1"
+            cursor.execute(command)
+            output = cursor.fetchone()
+
+            if output:
+                return 1
+            else:
+                return 0
+
+        conn.close()
