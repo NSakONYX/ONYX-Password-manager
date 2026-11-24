@@ -1,4 +1,5 @@
 import os
+import time
 from getpass import getpass
 
 from src.clipboard import ClipboardManager
@@ -39,8 +40,10 @@ def handle_auth(db: Database, crypto: CryptoEngine) -> bool:
     for attempt in range(1, MAX_LOGIN_ATTEMPTS + 1):
         passwd = getpass("Podaj Master Password: ")
 
+        TerminalUI.clear_screen()
+
         if crypto.authenticate(passwd, auth_salt, auth_hash, enc_salt):
-            TerminalUI.show_info("Zalogowano pomyślnie.")
+            TerminalUI.show_info("Zalogowano pomyślnie.\n")
             return True
 
         remaining = MAX_LOGIN_ATTEMPTS - attempt
@@ -69,62 +72,138 @@ def main():
 
         match choice:
             case "1":
-                TerminalUI.clear_screen()
-                entries = db.get_all_services()
-                TerminalUI.show_entries(entries)
-                TerminalUI.show_vault_menu()
+                while True:
+                    TerminalUI.clear_screen()
+                    entries = db.get_all_services()
+                    TerminalUI.show_entries(entries)
+                    TerminalUI.show_vault_menu()
 
-                option = input(
-                    f"{TerminalUI.GRAY}Naciśnij Enter, aby cofnac lub wybierz: {TerminalUI.RESET}"
-                )
+                    option = input(
+                        f"{TerminalUI.GRAY}Naciśnij Enter, aby cofnac lub wybierz: {TerminalUI.RESET}"
+                    )
 
-                match option:
-                    case "1":
-                        TerminalUI.clear_screen()
-                        TerminalUI.show_entries(entries)
-                        chosen_id = input(
-                            f"\n{TerminalUI.GRAY}Naciśnij Enter, aby cofnac lub wybierz: {TerminalUI.RESET}"
-                        )
+                    match option:
+                        case "1":
+                            TerminalUI.clear_screen()
+                            TerminalUI.show_entries(entries)
 
-                        if not chosen_id:
-                            continue
+                            chosen_id = input(
+                                f"\n{TerminalUI.GRAY}Naciśnij Enter, aby cofnac lub wybierz: {TerminalUI.RESET}"
+                            )
 
-                        if not chosen_id.isdigit():
-                            TerminalUI.show_error("ID musi być liczbą")
+                            if not chosen_id:
+                                continue
+
+                            if not chosen_id.isdigit():
+                                TerminalUI.show_error("ID musi być liczbą")
+                                TerminalUI.pause()
+                                continue
+
+                            encrypted_password = db.get_password(int(chosen_id))
+                            if encrypted_password is None:
+                                TerminalUI.show_error("Nie znaleziono wpisu o takim ID")
+                                TerminalUI.pause()
+                                continue
+
+                            decrypted_password = crypto.decrypt_data(encrypted_password)
+
+                            ClipboardManager.copy(decrypted_password)
+                            TerminalUI.show_success("Hasło skopiowane do schowka.")
+                            TerminalUI.show_info(
+                                "Wklej je, a potem naciśnij Enter, aby wyczyścić schowek..."
+                            )
                             TerminalUI.pause()
+                            ClipboardManager._clear_if_matches(decrypted_password)
+                            break
+
+                        case "2":
+                            TerminalUI.clear_screen()
+                            entries = db.get_all_services()
+                            TerminalUI.show_entries(entries)
+                            TerminalUI.show_vault_menu()
+
+                            chosen_id = input(
+                                f"{TerminalUI.GRAY}Wybierz id uslugi lub Enter aby wyjsc: {TerminalUI.RESET}"
+                            )
+
+                            if chosen_id == "":
+                                break
+
+                            encrypted_password = db.get_password(int(chosen_id))
+                            if encrypted_password is None:
+                                TerminalUI.show_error("Nie znaleziono wpisu o takim ID")
+                                TerminalUI.pause()
+                                continue
+
+                            decrypted_password = crypto.decrypt_data(encrypted_password)
+                            for i in range(6):
+                                TerminalUI.clear_screen()
+                                print(
+                                    f"\n{TerminalUI.GREEN}Haslo to:  {TerminalUI.GRAY}'{decrypted_password}'{TerminalUI.RED}  | haslo zniknie za: {6 - i}{TerminalUI.RESET}"
+                                )
+                                time.sleep(1)
+
+                            TerminalUI.clear_screen()
                             continue
 
-                        encrypted_password = db.get_password(int(chosen_id))
-                        if encrypted_password is None:
-                            TerminalUI.show_error("Nie znaleziono wpisu o takim ID")
-                            TerminalUI.pause()
+                        case "3":
+                            pass
+
+                        case "4":
+                            second_chance: str
+                            TerminalUI.clear_screen()
+                            entries = db.get_all_services()
+                            TerminalUI.show_entries(entries)
+
+                            chosen_id = input(
+                                f"{TerminalUI.GRAY}Wybierz id uslugi lub Enter aby wyjsc: {TerminalUI.RESET}"
+                            )
+
+                            if chosen_id == "":
+                                break
+
+                            if not chosen_id.isdigit():
+                                TerminalUI.show_error("ID musi być liczbą.")
+                                TerminalUI.pause()
+                                continue
+
+                            chosen_id = int(chosen_id)
+                            if not db.get_entry_by_id(chosen_id):
+                                TerminalUI.show_error(
+                                    "Nie znaleziono wpisu o takim ID."
+                                )
+                                TerminalUI.pause()
+                                continue
+
+                            for i in range(3):
+                                TerminalUI.clear_screen()
+                                print(
+                                    f"\n{TerminalUI.RED}!DZIALANIE NIEODWRACALNE!{TerminalUI.YELLOW} - Zastanow sie nad ta decyzja!{TerminalUI.GRAY} Potwierdzenie za {3 - i}{TerminalUI.RESET}"
+                                )
+                                time.sleep(1)
+                            TerminalUI.clear_screen()
+                            second_chance = input(
+                                f"{TerminalUI.GRAY}Czy potwierdzasz usuniecie uslugi? [y/n]:  {TerminalUI.RESET}"
+                            )
+
+                            TerminalUI.clear_screen()
+                            if second_chance == "y" and db.get_entry_by_id(chosen_id):
+                                db.delete_entry(chosen_id)
+                                print(
+                                    f"{TerminalUI.GREEN}Wpis usuniety pomyslnie!{TerminalUI.RESET}"
+                                )
+                                TerminalUI.clear_screen()
+                                continue
+                            else:
+                                continue
+
+                        case "":
+                            break
+                        case _:
+                            TerminalUI.show_error("Nieprawidlowa opcja")
                             continue
 
-                        decrypted_password = crypto.decrypt_data(encrypted_password)
-
-                        ClipboardManager.copy(decrypted_password)
-                        TerminalUI.show_success("Hasło skopiowane do schowka.")
-                        TerminalUI.show_info(
-                            "Wklej je, a potem naciśnij Enter, aby wyczyścić schowek..."
-                        )
-                        TerminalUI.pause()
-                        ClipboardManager._clear_if_matches(decrypted_password)
-
-                    case "2":
-                        pass
-
-                    case "3":
-                        pass
-
-                    case "4":
-                        pass
-
-                    case "":
-                        break
-                    case _:
-                        TerminalUI.show_error("Nieprawidlowa opcja")
-
-                TerminalUI.clear_screen()
+                    TerminalUI.clear_screen()
 
             case "2":
                 TerminalUI.clear_screen()

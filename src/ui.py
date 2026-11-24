@@ -61,6 +61,7 @@ class TerminalUI:
     @staticmethod
     def show_error(message: str):
         print(f"{TerminalUI.RED}[✗] {message}{TerminalUI.RESET}")
+        time.sleep(1)
 
     @staticmethod
     def show_info(message: str):
@@ -81,7 +82,10 @@ class TerminalUI:
         )
         print(f"{TerminalUI.GRAY}{'─' * 52}{TerminalUI.RESET}")
         for entry_id, service, login in entries:
-            print(f"{entry_id:<5} {service:<20} {login:<35}")
+            print(
+                f"{TerminalUI.PURPLE}{entry_id:<5}{TerminalUI.RESET} {service:<20} {login:<35}\n"
+            )
+            print(f"{TerminalUI.GRAY}{'─' * 52}{TerminalUI.RESET}")
 
     @classmethod
     def show_vault_menu(cls):
