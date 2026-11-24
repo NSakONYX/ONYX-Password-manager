@@ -70,13 +70,26 @@ def main():
             case "1":
                 TerminalUI.clear_screen()
                 # TODO: pobranie wpisow z bazy
-                entries = []
+
+                entries = db.get_all_services()
                 TerminalUI.show_entries(entries)
                 TerminalUI.pause()
                 TerminalUI.clear_screen()
 
             case "2":
                 TerminalUI.clear_screen()
+                # TODO: """
+                #   1: Change entry
+                #   2: Delete entry
+                #   3: Change master pasword
+                #   4: Dead man switch option
+                #   5: Backub vault
+                #   6: Password audit
+                #   7: Clipboard auto-clear time
+                #   8: Export to JSON/CSV
+                #   0: back
+                # """
+
                 TerminalUI.show_info("Ustawienia – w budowie.")
                 TerminalUI.pause()
                 TerminalUI.clear_screen()

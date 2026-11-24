@@ -73,14 +73,14 @@ class Database:
 
         conn.close()
 
-    def get_all_services(self) -> list[tuple[int, str]]:
-        """Zwraca wszystkie zapisane serwisy w tabeli vault wraz z ich id."""
+    def get_all_services(self) -> list[tuple[int, str, str]]:
+        """Zwraca wszystkie zapisane serwisy w tabeli vault wraz z ich id oraz loginem."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
-            command = "SELECT id, service FROM vault"
+            command = "SELECT id, service, login FROM vault"
             cursor.execute(command)
-            output = cursor.fetchall()
+            output = list(cursor.fetchall())
 
         conn.close()
 
