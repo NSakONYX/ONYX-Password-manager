@@ -49,7 +49,7 @@ ONYX-Password-manager/
 ├── main.py                 # Punkt startowy aplikacji i logika menu
 └── requirements.txt        # Zależności projektu
 
-
+```
 ## Uruchomienie projektu
 
 ### Wymagania
@@ -62,7 +62,7 @@ ONYX-Password-manager/
    ```bash
    git clone [https://github.com/](https://github.com/)<twoj-nick>/ONYX-Password-manager.git
    cd ONYX-Password-manager
-   ```
+   
 
 2. Utwórz i aktywuj środowisko wirtualne (`venv`):
    ```bash
