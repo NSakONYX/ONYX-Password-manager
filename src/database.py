@@ -138,3 +138,15 @@ class Database:
             cursor.execute(command, (new_login, index))
 
         conn.close()
+
+    def get_password(self, index: int) -> bytes:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+
+            command = "SELECT encrypted_password FROM vault where id=?"
+            cursor.execute(command, (index,))
+            passw = cursor.fetchone()
+
+        conn.close()
+
+        return passw[0] if passw else None

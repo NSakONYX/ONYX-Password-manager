@@ -1,6 +1,7 @@
 import os
 from getpass import getpass
 
+from src.clipboard import ClipboardManager
 from src.crypto import CryptoEngine
 from src.database import Database
 from src.ui import TerminalUI
@@ -79,7 +80,35 @@ def main():
 
                 match option:
                     case "1":
-                        pass
+                        TerminalUI.clear_screen()
+                        TerminalUI.show_entries(entries)
+                        chosen_id = input(
+                            f"\n{TerminalUI.GRAY}Naciśnij Enter, aby cofnac lub wybierz: {TerminalUI.RESET}"
+                        )
+
+                        if not chosen_id:
+                            continue
+
+                        if not chosen_id.isdigit():
+                            TerminalUI.show_error("ID musi być liczbą")
+                            TerminalUI.pause()
+                            continue
+
+                        encrypted_password = db.get_password(int(chosen_id))
+                        if encrypted_password is None:
+                            TerminalUI.show_error("Nie znaleziono wpisu o takim ID")
+                            TerminalUI.pause()
+                            continue
+
+                        decrypted_password = crypto.decrypt_data(encrypted_password)
+
+                        ClipboardManager.copy(decrypted_password)
+                        TerminalUI.show_success("Hasło skopiowane do schowka.")
+                        TerminalUI.show_info(
+                            "Wklej je, a potem naciśnij Enter, aby wyczyścić schowek..."
+                        )
+                        TerminalUI.pause()
+                        ClipboardManager._clear_if_matches(decrypted_password)
 
                     case "2":
                         pass
