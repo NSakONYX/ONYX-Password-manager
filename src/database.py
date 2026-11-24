@@ -1,10 +1,14 @@
 import sqlite3
+from pathlib import Path
 
 
 class Database:
     def __init__(self, db_path: str = "data/vault.db"):
         """Inicjalizacja - tworzenie bazy danych vault i tabel."""
         self.db_path = db_path
+
+        if self.db_path != ":memory:":
+            Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
