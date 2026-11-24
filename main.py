@@ -69,18 +69,39 @@ def main():
         match choice:
             case "1":
                 TerminalUI.clear_screen()
-                # TODO: pobranie wpisow z bazy
-
                 entries = db.get_all_services()
                 TerminalUI.show_entries(entries)
-                TerminalUI.pause()
+                TerminalUI.show_vault_menu()
+
+                option = input(
+                    f"{TerminalUI.GRAY}Naciśnij Enter, aby cofnac lub wybierz: {TerminalUI.RESET}"
+                )
+
+                match option:
+                    case "1":
+                        pass
+
+                    case "2":
+                        pass
+
+                    case "3":
+                        pass
+
+                    case "4":
+                        pass
+
+                    case "":
+                        break
+                    case _:
+                        TerminalUI.show_error("Nieprawidlowa opcja")
+
                 TerminalUI.clear_screen()
 
             case "2":
                 TerminalUI.clear_screen()
                 # TODO: """
-                #   1: Change entry
-                #   2: Delete entry
+                #   1: Change entry - przeniesione do sekcji 1
+                #   2: Delete entry - przeniesione do sekcji 1
                 #   3: Change master pasword
                 #   4: Dead man switch option
                 #   5: Backub vault

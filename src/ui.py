@@ -68,9 +68,7 @@ class TerminalUI:
 
     @staticmethod
     def pause():
-        input(
-            f"\n{TerminalUI.GRAY}Naciśnij Enter, aby kontynuować...{TerminalUI.RESET}"
-        )
+        input(f"{TerminalUI.GRAY}Naciśnij Enter, aby kontynuować...{TerminalUI.RESET}")
 
     @staticmethod
     def show_entries(entries: list[tuple]):
@@ -83,4 +81,25 @@ class TerminalUI:
         )
         print(f"{TerminalUI.GRAY}{'─' * 52}{TerminalUI.RESET}")
         for entry_id, service, login in entries:
-            print(f"{entry_id:<5} {service:<20} {login:<25}")
+            print(f"{entry_id:<5} {service:<20} {login:<35}")
+
+    @classmethod
+    def show_vault_menu(cls):
+        """
+        1. kopiuj haslo
+        2. pokaz haslo
+        3. edytuj
+        4. usun
+        """
+
+        options = [
+            ("[1]", "Kopiuj hasło", cls.PURPLE),
+            ("[2]", "Pokaż hasło", cls.GREEN),
+            ("[3]", "Edytuj", cls.YELLOW),
+            ("[4]", "Usuń", cls.RED),
+        ]
+
+        menu = "   ".join(
+            f"{color}{key}{cls.RESET} {label}" for key, label, color in options
+        )
+        print(f"\n\n\n{menu}")
