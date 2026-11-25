@@ -227,5 +227,7 @@ class OnyxApp:
         """Obsługuje podmenu ustawień skarbca."""
         TerminalUI.clear_screen()
         TerminalUI.show_info("Ustawienia – w budowie.")
+        # TODO: Zbudowanie dodatkowego podmenu z wyborem tego co chcemy edytowac (nazwa serwisu, login i haslo)
+
         TerminalUI.pause()
         TerminalUI.clear_screen()

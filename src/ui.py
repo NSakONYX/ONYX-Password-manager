@@ -42,6 +42,12 @@ class TerminalUI:
 
     @staticmethod
     def show_main_menu():
+        """
+        1: pokaz hasla
+        2: ustawienia
+        3: wyjdz
+        """
+
         print("      1. Pokaż zapisane hasła")
         print("      2.     Ustawienia")
         print("      3.       Wyjdź\n\n")
@@ -106,4 +112,4 @@ class TerminalUI:
         menu = "   ".join(
             f"{color}{key}{cls.RESET} {label}" for key, label, color in options
         )
-        print(f"\n\n\n{menu}")
+        print(f"\n{menu}")
