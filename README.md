@@ -39,6 +39,8 @@ ONYX-Password-manager/
 ├── data/
 │   └── vault.db            # Lokalna baza SQLite (generowana automatycznie, w .gitignore)
 ├── src/
+│   ├── __init__.py         # Inicjalizacja pakietu
+│   ├── app.py              # Główny kontroler aplikacji, autoryzacja i logika menu
 │   ├── clipboard.py        # Kopiowanie i bezpieczne czyszczenie schowka
 │   ├── crypto.py           # Wyprowadzanie kluczy (PBKDF2) i szyfrowanie Fernet
 │   ├── database.py         # Warstwa dostępu do bazy SQLite
@@ -46,7 +48,7 @@ ONYX-Password-manager/
 ├── tests/
 │   ├── test_crypto.py      # Testy jednostkowe warstwy kryptograficznej
 │   └── test_database.py    # Testy jednostkowe operacji na bazie danych
-├── main.py                 # Punkt startowy aplikacji i logika menu
+├── main.py                 # Punkt startowy aplikacji
 └── requirements.txt        # Zależności projektu
 
 ```
