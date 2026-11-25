@@ -113,3 +113,22 @@ class TerminalUI:
             f"{color}{key}{cls.RESET} {label}" for key, label, color in options
         )
         print(f"\n{menu}")
+
+    @classmethod
+    def show_edit_entry_menu(cls):
+        """
+        1. nazwa serwisu
+        2. login
+        3. haslo
+        """
+
+        options = [
+            ("[1]", "Nazwa serwisu", cls.PURPLE),
+            ("[2]", "Login", cls.GREEN),
+            ("[3]", "Haslo", cls.YELLOW),
+        ]
+
+        menu = "   ".join(
+            f"{color}{key}{cls.RESET} {label}" for key, label, color in options
+        )
+        print(f"{TerminalUI.GRAY}Mozliwe opcje edycji: {TerminalUI.RESET}\n{menu}")

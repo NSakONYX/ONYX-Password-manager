@@ -184,6 +184,86 @@ class OnyxApp:
 
     def _edit_entry(self, entries: list) -> None:
         """Pozwala edytować istniejący wpis w skarbcu."""
+        TerminalUI.clear_screen()
+        TerminalUI.show_edit_entry_menu()
+        option = input(
+            f"{TerminalUI.GRAY}\nCo chcialbys edytowac? Enter aby cofnac: {TerminalUI.GRAY}"
+        )
+
+        TerminalUI.clear_screen()
+        TerminalUI.show_entries(entries)
+
+        while True:
+            chosen_id = input(
+                f"{TerminalUI.GRAY}\nWybierz id uslugi, ktora chcesz edytowac: {TerminalUI.GRAY}"
+            )
+
+            if chosen_id is None:
+                return
+
+            TerminalUI.clear_screen()
+
+            match option:
+                case "1":
+                    pass
+
+                case "2":
+                    pass
+                case "3":
+                    encrypted_old_password = self.db.get_password(chosen_id)
+                    if encrypted_old_password is None:
+                        TerminalUI.show_error("Nie znaleziono wpisu o takim ID.")
+                        TerminalUI.pause()
+                        continue
+                    decrypted_old_password = self.crypto.decrypt_data(
+                        encrypted_old_password
+                    )
+
+                    while True:
+                        new_password = getpass(
+                            f"{TerminalUI.PURPLE}Podaj nowe haslo: {TerminalUI.RESET}"
+                        )
+
+                        if len(new_password) < 5:
+                            print(
+                                f"{TerminalUI.RED}Haslo jest za krotkie!{TerminalUI.GRAY} (min. 5 znakow){TerminalUI.RESET}"
+                            )
+                            time.sleep(2)
+                            continue
+                        if new_password == decrypted_old_password:
+                            print(
+                                f"{TerminalUI.RED}Nie mozna zmienic hasla na takie samo!{TerminalUI.RESET}"
+                            )
+                            time.sleep(2)
+                            continue
+
+                        new_password_checker = getpass(
+                            f"{TerminalUI.PURPLE}Powtorz haslo: {TerminalUI.RESET}"
+                        )
+
+                        if new_password != new_password_checker:
+                            print(
+                                f"{TerminalUI.RED}Haslo jest niezgodne z podanym!{TerminalUI.RESET}"
+                            )
+                            time.sleep(2)
+                            continue
+                        else:
+                            encrypted_password = self.crypto.encrypt_data(new_password)
+                            self.db.update_password(chosen_id, encrypted_password)
+
+                            TerminalUI.clear_screen()
+                            print(
+                                f"{TerminalUI.GREEN}Haslo zmienione pomyslnie!{TerminalUI.RESET}"
+                            )
+                            time.sleep(2)
+                            break
+                    break
+
+                case "":
+                    TerminalUI.clear_screen()
+                case _:
+                    TerminalUI.show_error("Nieprawidłowa opcja.")
+                    TerminalUI.pause()
 
     def _delete_entry(self, entries: list) -> None:
         """Trwale usuwa wybrany wpis po 3-sekundowym ostrzeżeniu i potwierdzeniu."""
@@ -227,7 +307,6 @@ class OnyxApp:
         """Obsługuje podmenu ustawień skarbca."""
         TerminalUI.clear_screen()
         TerminalUI.show_info("Ustawienia – w budowie.")
-        # TODO: Zbudowanie dodatkowego podmenu z wyborem tego co chcemy edytowac (nazwa serwisu, login i haslo)
 
         TerminalUI.pause()
         TerminalUI.clear_screen()
