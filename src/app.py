@@ -15,6 +15,30 @@ class OnyxApp:
         self.db = Database(db_path)
         self.crypto = CryptoEngine()
 
+    def seed_demo_entries(self) -> None:
+        """Dodaje 15 przykładowych wpisów testowych do skarbca."""
+        demo_data = [
+            ("Netflix", "jan.kowalski@gmail.com", "N3tfl!x_Stream99"),
+            ("Spotify", "jan.kowalski@gmail.com", "Sp0tify#Music2026"),
+            ("GitHub", "nixon-dev", "Gh_Token!7721xZ"),
+            ("Discord", "nixon#0001", "D1sc0rd_V0ice!88"),
+            ("Steam", "nixon_pl", "St3am$Valve2025"),
+            ("Allegro", "jan.kowalski@gmail.com", "All3gro_Zakupy44"),
+            ("mBank", "10948271", "mB@nk_Secur3!09"),
+            ("Revolut", "jan.kowalski@gmail.com", "R3v0lut#Card771"),
+            ("XTB", "jan.kowalski@gmail.com", "XTB_Tr@ding2026!"),
+            ("Gmail", "jan.kowalski@gmail.com", "G00gl3_Mail#912"),
+            ("Instagram", "urbexowe_fotografie", "Inst@_Photo!551"),
+            ("YouTube", "jan.kowalski@gmail.com", "YT_Ch@nnel8821"),
+            ("Amazon", "jan.kowalski@gmail.com", "Am@zon_Prim3!22"),
+            ("ChatGPT", "jan.kowalski@gmail.com", "Op3nAI_Key#404"),
+            ("Binance", "jan.kowalski@gmail.com", "B1n@nce_Spot991"),
+        ]
+
+        for service, login, password in demo_data:
+            encrypted = self.crypto.encrypt_data(password)
+            self.db.add_entry(service, login, encrypted)
+
     def run(self) -> None:
         """Uruchamia aplikację: wyświetla baner, autoryzuje użytkownika i otwiera menu."""
         TerminalUI.clear_screen()
@@ -22,6 +46,8 @@ class OnyxApp:
 
         if not self._handle_auth():
             return
+
+        self.seed_demo_entries()
 
         self._main_loop()
 
@@ -187,83 +213,188 @@ class OnyxApp:
         TerminalUI.clear_screen()
         TerminalUI.show_edit_entry_menu()
         option = input(
-            f"{TerminalUI.GRAY}\nCo chcialbys edytowac? Enter aby cofnac: {TerminalUI.GRAY}"
-        )
+            f"{TerminalUI.GRAY}\nCo chciałbyś edytować? Enter aby cofnąć: {TerminalUI.RESET}"
+        ).strip()
+
+        if not option:
+            return
+
+        if option not in ("1", "2", "3"):
+            TerminalUI.show_error("Nieprawidłowa opcja.")
+            TerminalUI.pause()
+            return
 
         TerminalUI.clear_screen()
         TerminalUI.show_entries(entries)
 
-        while True:
-            chosen_id = input(
-                f"{TerminalUI.GRAY}\nWybierz id uslugi, ktora chcesz edytowac: {TerminalUI.GRAY}"
-            )
+        entry_id = self._prompt_entry_id(
+            "\nWybierz ID usługi, którą chcesz edytować (Enter aby cofnąć): "
+        )
+        if entry_id is None:
+            return
 
-            if chosen_id is None:
-                return
+        entry = self.db.get_entry_by_id(entry_id)
+        if entry is None:
+            TerminalUI.show_error("Nie znaleziono wpisu o takim ID.")
+            TerminalUI.pause()
+            return
 
-            TerminalUI.clear_screen()
+        _, old_service, old_login, encrypted_old_password = entry
+        TerminalUI.clear_screen()
 
-            match option:
-                case "1":
-                    pass
+        match option:
+            case "1":
+                while True:
+                    new_service = input(
+                        f"{TerminalUI.PURPLE}\nNowa nazwa serwisu (Enter aby anulować): {TerminalUI.RESET}"
+                    ).strip()
 
-                case "2":
-                    pass
-                case "3":
-                    encrypted_old_password = self.db.get_password(chosen_id)
-                    if encrypted_old_password is None:
-                        TerminalUI.show_error("Nie znaleziono wpisu o takim ID.")
-                        TerminalUI.pause()
+                    if not new_service:
+                        return
+
+                    if len(new_service) < 1:
+                        print(
+                            f"{TerminalUI.RED}Nazwa serwisu jest za krótka!{TerminalUI.GRAY} (min. 1 znaki){TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
                         continue
-                    decrypted_old_password = self.crypto.decrypt_data(
-                        encrypted_old_password
+
+                    if new_service.lower() == old_service.lower():
+                        print(
+                            f"{TerminalUI.RED}Nazwa serwisu jest taka sama jak poprzednia!{TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    new_service_checker = input(
+                        f"{TerminalUI.PURPLE}\nPowtórz nazwę serwisu: {TerminalUI.RESET}"
+                    ).strip()
+
+                    if new_service != new_service_checker:
+                        print(
+                            f"{TerminalUI.RED}Podane nazwy są różne!{TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    if not self.db.update_service_name(entry_id, new_service):
+                        TerminalUI.show_error("Taki serwis z tym loginem już istnieje.")
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    TerminalUI.clear_screen()
+                    print(
+                        f"{TerminalUI.GREEN}Nazwa serwisu zmieniona pomyślnie!{TerminalUI.RESET}"
                     )
-
-                    while True:
-                        new_password = getpass(
-                            f"{TerminalUI.PURPLE}Podaj nowe haslo: {TerminalUI.RESET}"
-                        )
-
-                        if len(new_password) < 5:
-                            print(
-                                f"{TerminalUI.RED}Haslo jest za krotkie!{TerminalUI.GRAY} (min. 5 znakow){TerminalUI.RESET}"
-                            )
-                            time.sleep(2)
-                            continue
-                        if new_password == decrypted_old_password:
-                            print(
-                                f"{TerminalUI.RED}Nie mozna zmienic hasla na takie samo!{TerminalUI.RESET}"
-                            )
-                            time.sleep(2)
-                            continue
-
-                        new_password_checker = getpass(
-                            f"{TerminalUI.PURPLE}Powtorz haslo: {TerminalUI.RESET}"
-                        )
-
-                        if new_password != new_password_checker:
-                            print(
-                                f"{TerminalUI.RED}Haslo jest niezgodne z podanym!{TerminalUI.RESET}"
-                            )
-                            time.sleep(2)
-                            continue
-                        else:
-                            encrypted_password = self.crypto.encrypt_data(new_password)
-                            self.db.update_password(chosen_id, encrypted_password)
-
-                            TerminalUI.clear_screen()
-                            print(
-                                f"{TerminalUI.GREEN}Haslo zmienione pomyslnie!{TerminalUI.RESET}"
-                            )
-                            time.sleep(2)
-                            break
+                    time.sleep(2)
                     break
 
-                case "":
+            case "2":
+                while True:
+                    new_login = input(
+                        f"{TerminalUI.PURPLE}\nNowy login (Enter aby anulować): {TerminalUI.RESET}"
+                    ).strip()
+
+                    if not new_login:
+                        return
+
+                    if len(new_login) < 3:
+                        print(
+                            f"{TerminalUI.RED}Login jest za krótki!{TerminalUI.GRAY} (min. 3 znaki){TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    if new_login.lower() == old_login.lower():
+                        print(
+                            f"{TerminalUI.RED}Login jest taki sam jak poprzedni!{TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    new_login_checker = input(
+                        f"{TerminalUI.PURPLE}\nPowtórz login: {TerminalUI.RESET}"
+                    ).strip()
+
+                    if new_login != new_login_checker:
+                        print(
+                            f"{TerminalUI.RED}Podane loginy są różne!{TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    if not self.db.update_login(entry_id, new_login):
+                        TerminalUI.show_error(
+                            "Taki login dla tego serwisu już istnieje."
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
                     TerminalUI.clear_screen()
-                case _:
-                    TerminalUI.show_error("Nieprawidłowa opcja.")
-                    TerminalUI.pause()
+                    print(
+                        f"{TerminalUI.GREEN}Login zmieniony pomyślnie!{TerminalUI.RESET}"
+                    )
+                    time.sleep(2)
+                    break
+
+            case "3":
+                decrypted_old_password = self.crypto.decrypt_data(
+                    encrypted_old_password
+                )
+
+                while True:
+                    new_password = getpass(
+                        f"{TerminalUI.PURPLE}Podaj nowe hasło (Enter aby anulować): {TerminalUI.RESET}"
+                    )
+
+                    if not new_password:
+                        return
+
+                    if len(new_password) < 5:
+                        print(
+                            f"{TerminalUI.RED}Hasło jest za krótkie!{TerminalUI.GRAY} (min. 5 znaków){TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    if new_password == decrypted_old_password:
+                        print(
+                            f"{TerminalUI.RED}Nie można zmienić hasła na takie samo!{TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    new_password_checker = getpass(
+                        f"{TerminalUI.PURPLE}Powtórz hasło: {TerminalUI.RESET}"
+                    )
+
+                    if new_password != new_password_checker:
+                        print(
+                            f"{TerminalUI.RED}Hasło jest niezgodne z podanym!{TerminalUI.RESET}"
+                        )
+                        time.sleep(2)
+                        TerminalUI.clear_screen()
+                        continue
+
+                    encrypted_password = self.crypto.encrypt_data(new_password)
+                    self.db.update_password(entry_id, encrypted_password)
+
+                    TerminalUI.clear_screen()
+                    print(
+                        f"{TerminalUI.GREEN}Hasło zmienione pomyślnie!{TerminalUI.RESET}"
+                    )
+                    time.sleep(2)
+                    break
 
     def _delete_entry(self, entries: list) -> None:
         """Trwale usuwa wybrany wpis po 3-sekundowym ostrzeżeniu i potwierdzeniu."""
