@@ -18,7 +18,8 @@ class Database:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     service TEXT NOT NULL,
                     login TEXT NOT NULL,
-                    encrypted_password BLOB NOT NULL
+                    encrypted_password BLOB NOT NULL,
+                    UNIQUE(service COLLATE NOCASE, login COLLATE NOCASE)
                 )
             """
             cursor.execute(vault_tab)
@@ -67,15 +68,20 @@ class Database:
             return (output[0], output[1], output[2])
         return None
 
-    def add_entry(self, service_name: str, login: str, passw: bytes) -> None:
-        """Dodaje wpis do tabeli vault (serwis, login, zaszyfrowane hasło)."""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-
-            command = "INSERT INTO vault (service, login, encrypted_password) VALUES (?, ?, ?)"
-            cursor.execute(command, (service_name, login, passw))
-
-        conn.close()
+    def add_entry(self, service_name: str, login: str, passw: bytes) -> bool:
+        """Dodaje wpis do tabeli vault. Zwraca False, jeśli para (serwis, login) już istnieje."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    "INSERT INTO vault (service, login, encrypted_password) VALUES (?, ?, ?)",
+                    (service_name, login, passw),
+                )
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
 
     def get_all_services(self) -> list[tuple[int, str, str]]:
         """Zwraca wszystkie zapisane serwisy w tabeli vault wraz z ich id oraz loginem."""
@@ -113,15 +119,20 @@ class Database:
 
         conn.close()
 
-    def update_service_name(self, index: int, service_name: str) -> None:
-        """Nadpisuje nazwę serwisu w tabeli vault dla wiersza o danym id."""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-
-            command = "UPDATE vault SET service = ? WHERE id = ?"
-            cursor.execute(command, (service_name, index))
-
-        conn.close()
+    def update_service_name(self, index: int, service_name: str) -> bool:
+        """Nadpisuje nazwę serwisu dla wiersza o danym id. Zwraca False przy duplikacie."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    "UPDATE vault SET service = ? WHERE id = ?",
+                    (service_name, index),
+                )
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
 
     def update_password(self, index: int, passw: bytes) -> None:
         """Nadpisuje zaszyfrowane hasło w tabeli vault dla wiersza o danym id."""
@@ -133,15 +144,20 @@ class Database:
 
         conn.close()
 
-    def update_login(self, index: int, new_login: str) -> None:
-        """Nadpisuje login w tabeli vault dla wiersza o danym id."""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-
-            command = "UPDATE vault SET login = ? WHERE id = ?"
-            cursor.execute(command, (new_login, index))
-
-        conn.close()
+    def update_login(self, index: int, new_login: str) -> bool:
+        """Nadpisuje login dla wiersza o danym id. Zwraca False przy duplikacie."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            with conn:
+                conn.execute(
+                    "UPDATE vault SET login = ? WHERE id = ?",
+                    (new_login, index),
+                )
+            return True
+        except sqlite3.IntegrityError:
+            return False
+        finally:
+            conn.close()
 
     def get_password(self, index: int) -> bytes:
         with sqlite3.connect(self.db_path) as conn:
