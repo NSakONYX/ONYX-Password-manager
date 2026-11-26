@@ -47,8 +47,6 @@ class OnyxApp:
         if not self._handle_auth():
             return
 
-        self.seed_demo_entries()
-
         self._main_loop()
 
     def _handle_auth(self) -> bool:
