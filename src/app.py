@@ -432,10 +432,41 @@ class OnyxApp:
             TerminalUI.show_success("Wpis usunięty pomyślnie!")
             TerminalUI.pause()
 
+    def _settings_menu(self):
+        TerminalUI.clear_screen()
+
+        options = [
+            ("[1] ", "Zmiana hasla glownego"),
+            ("[2] ", "Czas aut. czyszczenia schowka"),
+            ("[3] ", "Audyt sily hasel"),
+            ("[4] ", "Generator hasel"),
+            ("[5] ", "Kopia zapasowa skarbca"),
+            ("[6] ", "Eksport danych (JSON/CSV)"),
+            ("[7] ", "Dead man switch"),
+            ("[None] ", "Powrot"),
+        ]
+
+        print(f"{TerminalUI.PURPLE}{'━' * 35}{TerminalUI.RESET}")
+        for index, menu_option in options:
+            print(f"{TerminalUI.PURPLE}{index}{TerminalUI.RESET}{menu_option}")
+
     def _settings_loop(self) -> None:
         """Obsługuje podmenu ustawień skarbca."""
         TerminalUI.clear_screen()
-        TerminalUI.show_info("Ustawienia – w budowie.")
+        self._settings_menu()
+
+        """
+        #TODO: 
+        === USTAWIENIA ===
+        [1] Zmiana hasła głównego
+        [2] Czas automatycznego czyszczenia schowka
+        [3] Audyt siły haseł
+        [4] Generator haseł
+        [5] Kopia zapasowa skarbca (Backup)
+        [6] Eksport danych (JSON / CSV)
+        [7] Dead man switch
+        [0] Powrót
+        """
 
         TerminalUI.pause()
         TerminalUI.clear_screen()
