@@ -170,3 +170,32 @@ class Database:
         conn.close()
 
         return passw[0] if passw else None
+
+    def get_all_encrypted_entries(self) -> list[tuple[int, bytes]]:
+        """Pobiera ID i zaszyfrowane hasła wszystkich wpisów do ponownego szyfrowania."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, encrypted_password FROM vault")
+            return cursor.fetchall()
+
+    def update_master_and_vault(
+        self,
+        auth_hash: bytes,
+        auth_salt: bytes,
+        enc_salt: bytes,
+        reencrypted_entries: list[tuple[bytes, int]],
+    ) -> None:
+        """Atomowo aktualizuje dane mastera i wszystkie przeliczone wpisy w jednej transakcji."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE master_secrets
+                SET auth_hash = ?, auth_salt = ?, enc_salt = ?
+                """,
+                (auth_hash, auth_salt, enc_salt),
+            )
+            cursor.executemany(
+                "UPDATE vault SET encrypted_password = ? WHERE id = ?",
+                reencrypted_entries,
+            )
