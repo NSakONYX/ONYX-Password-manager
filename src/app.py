@@ -1,3 +1,4 @@
+import sqlite3
 import time
 from getpass import getpass
 
@@ -449,6 +450,45 @@ class OnyxApp:
         print(f"{TerminalUI.PURPLE}{'━' * 35}{TerminalUI.RESET}")
         for index, menu_option in options:
             print(f"{TerminalUI.PURPLE}{index}{TerminalUI.RESET}{menu_option}")
+
+    def change_main_password(self, new_password: str) -> bool:
+        """Zmienia hasło główne i ponownie szyfruje cały skarbiec nowym kluczem."""
+        if not new_password:
+            return False
+
+        encrypted_entries = self.db.get_all_encrypted_entries()
+        decrypted_entries: list[tuple[int, str]] = [
+            (entry_id, self.crypto.decrypt_data(enc_pass))
+            for entry_id, enc_pass in encrypted_entries
+        ]
+
+        new_auth_hash, new_auth_salt, new_enc_salt = (
+            self.crypto.create_master_credentials(new_password)
+        )
+
+        new_crypto = CryptoEngine()
+        if not new_crypto.authenticate(
+            new_password, new_auth_hash, new_auth_salt, new_enc_salt
+        ):
+            return False
+
+        reencrypted_entries: list[tuple[bytes, int]] = [
+            (new_crypto.encrypt_data(plain_pass), entry_id)
+            for entry_id, plain_pass in decrypted_entries
+        ]
+
+        try:
+            self.db.update_master_and_vault(
+                new_auth_hash,
+                new_auth_salt,
+                new_enc_salt,
+                reencrypted_entries,
+            )
+        except sqlite3.Error:
+            return False
+
+        self.crypto = new_crypto
+        return True
 
     def _settings_loop(self) -> None:
         """Obsługuje podmenu ustawień skarbca."""
